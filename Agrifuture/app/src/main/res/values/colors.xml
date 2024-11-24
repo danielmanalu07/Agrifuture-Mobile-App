@@ -12,5 +12,5 @@
     <color name="background">#EDE6DA</color>
     <color name="indicator_selected">#20B08D</color>
     <color name="green">#7AB434</color>
-
+    <color name="yellow">#FBC02D</color>
 </resources>

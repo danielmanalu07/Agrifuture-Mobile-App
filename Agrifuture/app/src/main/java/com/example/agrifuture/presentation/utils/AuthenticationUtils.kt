@@ -3,22 +3,33 @@ package com.example.agrifuture.presentation.utils
 import android.content.Context
 
 class AuthenticationUtils(private val context: Context) {
-    fun isLoginComplete(): Boolean{
-        return context.getSharedPreferences("login", Context.MODE_PRIVATE)
-            .getBoolean("completed", false)
+    private val sharedPreferences = context.getSharedPreferences("login", Context.MODE_PRIVATE)
+
+    fun isLoginComplete(): Boolean {
+        return sharedPreferences.getBoolean(getToken(), false)
     }
 
     fun setLoginComplete() {
-        return context.getSharedPreferences("login", Context.MODE_PRIVATE)
-            .edit()
-            .putBoolean("completed", true)
+        sharedPreferences.edit()
+            .putBoolean(getToken(), true)
             .apply()
     }
 
-    fun clearLoginComplete() {
-        context.getSharedPreferences("login", Context.MODE_PRIVATE)
-            .edit()
-            .remove("completed")
+    fun setLogout() {
+        sharedPreferences.edit()
+            .remove(getToken())
             .apply()
     }
+
+    fun setToken(token: String) {
+        sharedPreferences.edit()
+            .putString("token", token)
+            .apply()
+    }
+
+    fun getToken(): String? {
+        return sharedPreferences.getString("token", null)
+    }
+
+
 }

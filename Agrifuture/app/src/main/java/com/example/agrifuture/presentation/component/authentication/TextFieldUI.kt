@@ -1,6 +1,7 @@
 package com.example.agrifuture.presentation.component.authentication
 
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.text.input.InputTransformation.Companion.keyboardOptions
@@ -10,11 +11,13 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.agrifuture.R
 
 @Composable
@@ -66,9 +69,16 @@ fun TextFieldUI(
                 }
             }
         } else null,
-        isError = !errorMessage.isNullOrEmpty(),
-        supportingText = if (!errorMessage.isNullOrEmpty()) {
-            { Text(text = errorMessage) }
+        isError = errorMessage != null,
+        supportingText = if (errorMessage != null) {
+            {
+                Text(
+                    text = errorMessage,
+                    color = Color.Red,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(start = 8.dp, top = 4.dp)
+                )
+            }
         } else {
             null
         }
