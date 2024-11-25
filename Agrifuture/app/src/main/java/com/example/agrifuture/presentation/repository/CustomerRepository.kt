@@ -75,8 +75,8 @@ class AuthRepository {
         val authenticationUtils = AuthenticationUtils(context)
         return withContext(Dispatchers.IO) {
             try {
-                val token = "Bearer " + authenticationUtils.getToken().toString()
-                authService.profile(token)
+                val token = authenticationUtils.getToken().toString()
+                authService.profile("Bearer $token")
             } catch (e: HttpException) {
                 val errorBody = e.response()?.errorBody()?.string()
                 val errorResponse = gson.fromJson(errorBody, ProfileResponse::class.java)

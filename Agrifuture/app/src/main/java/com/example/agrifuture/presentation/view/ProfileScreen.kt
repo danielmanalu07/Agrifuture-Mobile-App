@@ -46,6 +46,7 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -66,10 +67,10 @@ fun ProfileScreen(navController: NavController, authVM: AuthVM) {
     val context = LocalContext.current
     val showLogoutDialog = remember { mutableStateOf(false) }
 
-    val customer by authVM.customers.collectAsState()
+    val profileState by authVM.profileState.collectAsState()
 
     LaunchedEffect(Unit) {
-        if (authVM.profileState !is ProfileState.Success) {
+        if (profileState is ProfileState.Idle) {
             authVM.profile(context)
         }
     }
@@ -144,95 +145,28 @@ fun ProfileScreen(navController: NavController, authVM: AuthVM) {
                 )
             }
 
-            when (val state = authVM.profileState) {
+            when(val state = profileState) {
                 is ProfileState.Idle -> {
-                    Box(
-                        modifier = Modifier.fillMaxWidth(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("Loading profile...")
-                    }
+                    // Initial state, do nothing
                 }
                 is ProfileState.Loading -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
+                    CircularProgressIndicator(
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
                 }
                 is ProfileState.Success -> {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .offset(y = -35.dp)
-                            .padding(horizontal = 20.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            text = state.data.name,
-                            style = TextStyle(
-                                fontSize = 16.sp,
-                                color = Color.Black,
-                                fontWeight = FontWeight.Bold
-                            ),
-                        )
-
-                        Spacer(modifier = Modifier.size(10.dp))
-
-                        Text(
-                            text = state.data.email,
-                            style = TextStyle(
-                                fontSize = 16.sp,
-                                color = colorResource(id = R.color.gray)
-                            ),
-                        )
-
-                        Spacer(modifier = Modifier.size(10.dp))
-
-                        Text(
-                            text = state.data.phone,
-                            style = TextStyle(
-                                fontSize = 16.sp,
-                                color = colorResource(id = R.color.gray)
-                            ),
-                        )
-
-                        Spacer(modifier = Modifier.size(10.dp))
-
-                        Text(
-                            text = state.data.address,
-                            style = TextStyle(
-                                fontSize = 16.sp,
-                                color = colorResource(id = R.color.gray)
-                            ),
-                        )
-
-                        Spacer(modifier = Modifier.size(20.dp))
-
-                        Divider(
-                            modifier = Modifier.fillMaxWidth(),
-                            color = colorResource(id = R.color.black)
-                        )
-                    }
+                    val customer = state.data
+                    ProfileContent(customer = customer)
                 }
                 is ProfileState.Error -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = state.message,
-                            color = Color.Red,
-                            style = TextStyle(fontSize = 16.sp)
-                        )
-                    }
+                    Text(
+                        text = state.message,
+                        color = Color.Red,
+                        modifier = Modifier.align(Alignment.CenterHorizontally)
+                    )
                 }
             }
+
             Spacer(modifier = Modifier.height(15.dp))
 
             Column(
@@ -284,6 +218,37 @@ fun ProfileScreen(navController: NavController, authVM: AuthVM) {
         }
     }
 }
+
+@Composable
+fun ProfileContent(customer: Customer) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 20.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = customer.name,
+            style = TextStyle(
+                fontSize = 16.sp,
+                color = Color.Black,
+                fontWeight = FontWeight.Bold
+            ),
+        )
+
+        Spacer(modifier = Modifier.size(10.dp))
+
+        Text(
+            text = customer.email,
+            style = TextStyle(
+                fontSize = 16.sp,
+                color = colorResource(id = R.color.gray)
+            ),
+        )
+    }
+}
+
+
 
 @Composable
 fun ItemProfile(

@@ -27,9 +27,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 class AuthVM(private val repository: AuthRepository, var customer: List<Customer>, navController: NavController) : ViewModel() {
-    private val _customer: MutableStateFlow<Customer?> = MutableStateFlow(null)
-    val customers: StateFlow<Customer?> = _customer.asStateFlow()
-
     var name by mutableStateOf("")
     var email by mutableStateOf("")
     var password by mutableStateOf("")
@@ -41,8 +38,6 @@ class AuthVM(private val repository: AuthRepository, var customer: List<Customer
     var isPasswordConfirmationVisible by mutableStateOf(false)
 
     var loginState by mutableStateOf<LoginStates>(LoginStates.Idle)
-    var profileState by mutableStateOf<ProfileState>(ProfileState.Idle)
-        private set
     private val gson = Gson()
 
 
@@ -220,6 +215,8 @@ class AuthVM(private val repository: AuthRepository, var customer: List<Customer
     }
 
 
+
+
     fun login(navController: NavController, context: Context){
         if (!validateFieldsLogin()) {
             loginState = LoginStates.Error("Please check all fields")
@@ -256,31 +253,50 @@ class AuthVM(private val repository: AuthRepository, var customer: List<Customer
 
 
 
-    fun profile(context: Context) = viewModelScope.launch {
-        profileState = ProfileState.Loading
-        try {
-            val response = repository.profile(context)
-            profileState = response.data?.let {
-                ProfileState.Success(
-                    message = response.message,
-                    data = it
+//    fun profile(context: Context) = viewModelScope.launch {
+//        profileState = ProfileState.Loading
+//        try {
+//            val response = repository.profile(context)
+//            profileState = response.data?.let {
+//                ProfileState.Success(
+//                    message = response.message,
+//                    data = it
+//                )
+//            }!!
+//            Log.d("customer_data", response.data.name)
+//        } catch (e: retrofit2.HttpException) {
+//            val errorBody = e.response()?.errorBody()?.string()
+//            val errorMessage = gson.fromJson(errorBody, ProfileResponse::class.java)
+//            profileState = ProfileState.Error(errorMessage.message)
+//        } catch (e: Exception) {
+//            profileState = ProfileState.Error(e.message ?: "Unknown error occurred")
+//        }
+//    }
+
+    private val _profileState = MutableStateFlow<ProfileState>(ProfileState.Idle)
+    val profileState: StateFlow<ProfileState> get() = _profileState
+
+    fun profile(context: Context){
+        viewModelScope.launch {
+            _profileState.value = ProfileState.Loading
+            try {
+                val response = repository.profile(context)
+                _profileState.value = ProfileState.Success(
+                    message = "Profile loaded successfully",
+                    data = response.data
                 )
-            }!!
-            Log.d("customer_data", response.data.name)
-        } catch (e: retrofit2.HttpException) {
-            val errorBody = e.response()?.errorBody()?.string()
-            val errorMessage = gson.fromJson(errorBody, ProfileResponse::class.java)
-            profileState = ProfileState.Error(errorMessage.message)
-        } catch (e: Exception) {
-            profileState = ProfileState.Error(e.message ?: "Unknown error occurred")
+                Log.d("ProfileState", "Profile loaded: ${response.data}")
+            } catch (e: Exception) {
+                _profileState.value = ProfileState.Error(e.message ?: "Unknown error")
+            }
         }
     }
+
 
 
     fun logout(context: Context) {
         val authUtils = AuthenticationUtils(context)
         authUtils.setLogout()
-        _customer.value = null
     }
 
 }
