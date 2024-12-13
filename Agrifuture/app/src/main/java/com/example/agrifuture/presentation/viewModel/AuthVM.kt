@@ -9,7 +9,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.navigation.NavController
+import androidx.navigation.compose.rememberNavController
 import com.example.agrifuture.presentation.data.dto.login.LoginResponse
+import com.example.agrifuture.presentation.data.dto.logout.LogoutResponse
 import com.example.agrifuture.presentation.data.dto.profile.ProfileResponse
 import com.example.agrifuture.presentation.model.Customer
 import com.example.agrifuture.presentation.navigation.Screen
@@ -17,6 +19,7 @@ import com.example.agrifuture.presentation.repository.AuthRepository
 import com.example.agrifuture.presentation.service.AuthService
 import com.example.agrifuture.presentation.state.AuthState
 import com.example.agrifuture.presentation.state.LoginStates
+import com.example.agrifuture.presentation.state.LogoutState
 import com.example.agrifuture.presentation.state.ProfileState
 import com.example.agrifuture.presentation.utils.AuthenticationUtils
 import com.google.gson.Gson
@@ -174,7 +177,6 @@ class AuthVM(private val repository: AuthRepository, var customer: List<Customer
 
 
 
-
     fun register(navController: NavController) {
         if (!validateFields()) {
             authenticationState = AuthState.Error("Please check all fields")
@@ -236,7 +238,6 @@ class AuthVM(private val repository: AuthRepository, var customer: List<Customer
                 delay(1500)
                 val authUtils = AuthenticationUtils(context = context)
                 authUtils.setToken(response.token)
-                AuthenticationUtils(context).setToken(response.token)
                 authUtils.setLoginComplete()
                 navController.navigate(Screen.Home.route){
                     popUpTo(Screen.Login.route) {inclusive = true}
@@ -251,32 +252,11 @@ class AuthVM(private val repository: AuthRepository, var customer: List<Customer
         }
     }
 
-
-
-//    fun profile(context: Context) = viewModelScope.launch {
-//        profileState = ProfileState.Loading
-//        try {
-//            val response = repository.profile(context)
-//            profileState = response.data?.let {
-//                ProfileState.Success(
-//                    message = response.message,
-//                    data = it
-//                )
-//            }!!
-//            Log.d("customer_data", response.data.name)
-//        } catch (e: retrofit2.HttpException) {
-//            val errorBody = e.response()?.errorBody()?.string()
-//            val errorMessage = gson.fromJson(errorBody, ProfileResponse::class.java)
-//            profileState = ProfileState.Error(errorMessage.message)
-//        } catch (e: Exception) {
-//            profileState = ProfileState.Error(e.message ?: "Unknown error occurred")
-//        }
-//    }
-
     private val _profileState = MutableStateFlow<ProfileState>(ProfileState.Idle)
-    val profileState: StateFlow<ProfileState> get() = _profileState
+    val profileState: StateFlow<ProfileState> = _profileState
 
-    fun profile(context: Context){
+    fun profile(context: Context, navController: NavController){
+        val authUtils = AuthenticationUtils(context = context)
         viewModelScope.launch {
             _profileState.value = ProfileState.Loading
             try {
@@ -285,7 +265,13 @@ class AuthVM(private val repository: AuthRepository, var customer: List<Customer
                     message = "Profile loaded successfully",
                     data = response.data
                 )
-                Log.d("ProfileState", "Profile loaded: ${response.data}")
+                if (response.message == "Invalid Token") {
+                    navController.navigate(Screen.Login.route) {
+                        popUpTo(0) { inclusive = true }
+                    }
+                    authUtils.setLogout()
+                }
+                Log.d("ProfileState", "Profile loaded: ${response.message}")
             } catch (e: Exception) {
                 _profileState.value = ProfileState.Error(e.message ?: "Unknown error")
             }
@@ -293,10 +279,22 @@ class AuthVM(private val repository: AuthRepository, var customer: List<Customer
     }
 
 
+    private val _logout = MutableStateFlow<LogoutState>(LogoutState.Idle)
+    val logout: StateFlow<LogoutState> get() = _logout
 
     fun logout(context: Context) {
         val authUtils = AuthenticationUtils(context)
-        authUtils.setLogout()
+        viewModelScope.launch {
+            try {
+                val res = repository.logout(context)
+                _logout.value = LogoutState.Success(
+                    message = res.message
+                )
+                authUtils.setLogout()
+            } catch (e: Exception){
+                _logout.value = LogoutState.Error(e.message ?: "Unknown error")
+            }
+        }
     }
 
 }

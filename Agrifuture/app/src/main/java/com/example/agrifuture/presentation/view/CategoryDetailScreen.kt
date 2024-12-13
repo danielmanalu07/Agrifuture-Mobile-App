@@ -1,5 +1,7 @@
 package com.example.agrifuture.presentation.view
 
+import android.util.Log
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -25,14 +27,23 @@ import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
@@ -43,44 +54,94 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.example.agrifuture.R
+import com.example.agrifuture.presentation.data.ApiClient
 import com.example.agrifuture.presentation.model.Product
+import com.example.agrifuture.presentation.model.Pupuk
 import com.example.agrifuture.presentation.navigation.Screen
+import com.example.agrifuture.presentation.repository.PupukRepository
+import com.example.agrifuture.presentation.state.CategoryState
 import com.example.agrifuture.presentation.viewModel.CategoryVM
 import com.example.agrifuture.presentation.viewModel.ProductVM
+import com.example.agrifuture.presentation.viewModel.PupukVM
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
-fun CategoryDetailScreen(navController: NavController, categoryId: Int) {
-    val categoryVM = CategoryVM()
-    val productVM = ProductVM()
-    val category = categoryVM.getCategories().find { it.id == categoryId }
+fun CategoryDetailScreen(navController: NavController, id: Int, categoryVM: CategoryVM, pupukVM: PupukVM) {
+    val context = LocalContext.current
+    val pupukByCategory by pupukVM.pupukByCategory.collectAsState()
+    val categoryState by categoryVM.category.collectAsState()
 
-    category?.let {
-        Scaffold(
-            topBar = {
-                TopAppBar(
-                    title = {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.Start
-                        ) {
-                            IconButton(
-                                onClick = { navController.popBackStack() },
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.ArrowBack,
-                                    contentDescription = "Back"
-                                )
-                            }
-                            Text(it.name, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+    LaunchedEffect(pupukByCategory) {
+        if (categoryState is CategoryState.Idle) {
+            categoryVM.getById(id)
+        }
+        pupukVM.getPupukByCategory(id)
+    }
+
+    val refreshScope = rememberCoroutineScope()
+    var refreshing by remember { mutableStateOf(false) }
+
+    fun refresh() = refreshScope.launch {
+        refreshing = true
+        pupukVM.apply {
+            getPupukByCategory(id)
+        }
+        delay(1000)
+        refreshing = false
+    }
+
+
+    Log.d("dataPupuk", pupukByCategory.toString())
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.Start
+                    ) {
+                        IconButton(onClick = { navController.popBackStack() }) {
+                            Icon(imageVector = Icons.Default.ArrowBack, contentDescription = "Back")
                         }
-                    },
-                    backgroundColor = colorResource(id = R.color.green),
-                )
-            }
-        ) { paddingValues ->
-            if (productVM.getProductsForCategory(categoryId).isNotEmpty()){
+                        when (categoryState) {
+                            is CategoryState.Idle -> Text("No data available")
+                            is CategoryState.Loading -> CircularProgressIndicator()
+                            is CategoryState.Error -> {
+                                val errorMessage = (categoryState as CategoryState.Error).message
+                                Text("Error: $errorMessage", color = Color.Red)
+                                Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                            }
+                            is CategoryState.Success -> {
+                                val categories = (categoryState as CategoryState.Success).kategori
+                                val category = categories.find { it.id == id }
+                                Text(category?.name ?: "Category not found", fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                            }
+                        }
+                    }
+                },
+                backgroundColor = colorResource(id = R.color.green),
+            )
+        }
+    ) { paddingValues ->
+        SwipeRefresh(
+            state = rememberSwipeRefreshState(refreshing),
+            onRefresh = { refresh()}
+        ) {
+            if (pupukByCategory.isEmpty()) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text("No Pupuk available for this category", fontSize = 16.sp, color = Color.Gray)
+                }
+            } else {
                 LazyVerticalGrid(
                     columns = GridCells.Adaptive(minSize = 142.dp),
                     modifier = Modifier
@@ -91,45 +152,28 @@ fun CategoryDetailScreen(navController: NavController, categoryId: Int) {
                     verticalArrangement = Arrangement.spacedBy(12.dp),
                     contentPadding = PaddingValues(vertical = 12.dp)
                 ) {
-                    items(productVM.getProductsForCategory(categoryId)) { product ->
+                    items(pupukByCategory) { pupuk ->
                         ProductCard(
                             navController = navController,
-                            product = product,
+                            pupuk = pupuk,
                             onClick = {
-                                navController.navigate(Screen.DetailProduct.createRoute(productId = product.id)){
-                                    popUpTo(Screen.DetailProduct.route) {inclusive = true}
+                                navController.navigate(Screen.DetailProduct.createRoute(id = pupuk.id)) {
+                                    popUpTo(Screen.DetailProduct.route) { inclusive = true }
                                 }
                             }
                         )
                     }
                 }
-            } else {
-                Column(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(paddingValues)
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text(
-                        text = "Product Not Found",
-                        fontSize = 24.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = colorResource(id = R.color.black),
-                        textAlign = TextAlign.Center
-                    )
-                }
             }
-
         }
     }
 }
 
+
 @Composable
 fun ProductCard(
     modifier: Modifier = Modifier,
-    product: Product,
+    pupuk: Pupuk,
     navController: NavController,
     onClick: () -> Unit
 ) {
@@ -153,9 +197,9 @@ fun ProductCard(
                     .fillMaxWidth()
                     .height(166.dp)
             ) {
-                Image(
-                    painter = painterResource(id = product.image),
-                    contentDescription = product.name,
+                AsyncImage(
+                    model = ApiClient.BASE_URL_2 + "pupuk" + pupuk.image_path,
+                    contentDescription = pupuk.name,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Crop
                 )
@@ -164,7 +208,7 @@ fun ProductCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = product.name,
+                text = pupuk.name,
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Bold,
                 maxLines = 2,
@@ -173,7 +217,7 @@ fun ProductCard(
             )
 
             Text(
-                text = "Rp ${product.price.toInt()}",
+                text = "Rp ${pupuk.price}",
                 fontSize = 12.sp,
                 color = colorResource(id = R.color.black)
             )
@@ -190,7 +234,7 @@ fun ProductCard(
                 )
                 Spacer(modifier = Modifier.width(2.dp))
                 Text(
-                    text = "${product.rating.toDouble()}",
+                    text = "5.0",
                     fontSize = 10.sp,
                     color = Color.Gray
                 )
@@ -210,7 +254,7 @@ fun ProductCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = product.shop.name,
+                    text = pupuk.sellers?.store_name ?: "Unknown Seller",
                     fontSize = 10.sp,
                     color = Color.Gray,
                     maxLines = 1,
@@ -243,10 +287,8 @@ fun ProductCard(
 private fun PreviewCategoryDetailScreen() {
     val navController = rememberNavController()
     val categoryVM = CategoryVM()
-    val categoryList = categoryVM.getCategories()
-    if (categoryList.isNotEmpty()) {
-        CategoryDetailScreen(navController = navController, categoryId = categoryList[0].id)
-    } else {
-        Text("No product available for preview")
-    }
+    val pupukRepository = PupukRepository()
+    val pupukVM = PupukVM(pupukRepository)
+    CategoryDetailScreen(navController = navController, id = 1, categoryVM = categoryVM, pupukVM)
+
 }

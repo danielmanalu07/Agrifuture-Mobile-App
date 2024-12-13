@@ -17,7 +17,7 @@ class AuthenticationUtils(private val context: Context) {
 
     fun setLogout() {
         sharedPreferences.edit()
-            .remove(getToken())
+            .clear()
             .apply()
     }
 

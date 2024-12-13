@@ -1,8 +1,6 @@
 package com.example.agrifuture.presentation.component.shop
 
-import android.widget.Toast
 import androidx.compose.foundation.Canvas
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,56 +16,49 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil.compose.AsyncImage
 import com.example.agrifuture.R
-import com.example.agrifuture.presentation.model.Product
-import com.example.agrifuture.presentation.model.Shop
+import com.example.agrifuture.presentation.data.ApiClient
+import com.example.agrifuture.presentation.model.Pupuk
 import com.example.agrifuture.presentation.navigation.Screen
-import com.example.agrifuture.presentation.repository.ProductRepository
-import com.example.agrifuture.presentation.repository.ShopRepository
+import com.example.agrifuture.presentation.viewModel.PupukVM
 
 @Composable
 fun ShopSection(
-    shop: Shop,
-    products: List<Product>,
-    navController: NavController
+    pupuk: List<Pupuk>,
+    navController: NavController,
+    pupukVM: PupukVM
 ) {
     val context = LocalContext.current
     Column(
         modifier = Modifier.padding(2.dp)
     ) {
-        GreenLabel(shop.name)
+        GreenLabel(pupuk.firstOrNull()?.sellers?.store_name ?: "Unknown Seller")
         Spacer(modifier = Modifier.height(12.dp))
-        LazyRow(
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            items(products) { product ->
+        LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            items(pupuk) { product ->
                 ProductCard(
-                    product = product,
+                    pupuk = product,
                     onClick = {
-                        navController.navigate(Screen.DetailProduct.createRoute(productId = product.id)){
-                            popUpTo(Screen.DetailProduct.route) {inclusive = true}
-                        }
+                        navController.navigate(Screen.DetailProduct.createRoute(product.id))
                     }
                 )
             }
@@ -111,12 +102,12 @@ fun GreenLabel(text: String) {
 @Composable
 fun ProductCard(
     modifier: Modifier = Modifier,
-    product: Product,
+    pupuk: Pupuk,
     onClick: () -> Unit
 ) {
     Card(
         modifier = modifier
-            .width(160.dp)
+            .width(200.dp)
             .clickable { onClick() },
         elevation = CardDefaults.cardElevation(8.dp),
         colors = CardDefaults.cardColors(
@@ -129,9 +120,9 @@ fun ProductCard(
                 .fillMaxSize()
                 .padding(8.dp)
         ) {
-            Image(
-                painter = painterResource(id = product.image),
-                contentDescription = product.name,
+            AsyncImage(
+                model = ApiClient.BASE_URL_2 + "pupuk" + pupuk.image_path,
+                contentDescription = pupuk.name,
                 modifier = Modifier
                     .fillMaxWidth(),
                 contentScale = ContentScale.FillWidth
@@ -140,7 +131,7 @@ fun ProductCard(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = product.name,
+                text = pupuk.name,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 maxLines = 1,
@@ -150,7 +141,7 @@ fun ProductCard(
 
 
             Text(
-                text = "${product.stock} kg",
+                text = "${pupuk.stock} kg",
                 fontSize = 12.sp,
                 fontWeight = FontWeight.Normal,
                 color = Color.Black
@@ -163,7 +154,7 @@ fun ProductCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Rp. ${product.price.toInt()}",
+                    text = "Rp. ${pupuk.price}",
                     fontSize = 12.sp,
                     fontWeight = FontWeight.Normal,
                     color = Color.Black
@@ -172,7 +163,7 @@ fun ProductCard(
                 Spacer(modifier = Modifier.height(2.dp))
 
                 Text(
-                    text = product.shop.name,
+                    text = pupuk.sellers?.store_name ?: "Unknown Seller",
                     fontSize = 12.sp,
                     color = Color.Gray
                 )

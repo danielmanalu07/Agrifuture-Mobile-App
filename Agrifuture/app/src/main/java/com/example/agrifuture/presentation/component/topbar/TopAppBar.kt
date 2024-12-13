@@ -18,6 +18,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -31,13 +34,21 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
 import com.example.agrifuture.R
 import com.example.agrifuture.presentation.navigation.Screen
-import com.example.agrifuture.presentation.repository.CustomerRepository
+import com.example.agrifuture.presentation.repository.AuthRepository
+import com.example.agrifuture.presentation.state.ProfileState
+import com.example.agrifuture.presentation.viewModel.AuthVM
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TopAppBarUI(navController: NavController) {
+fun TopAppBarUI(navController: NavController, authVM: AuthVM) {
     val context = LocalContext.current
-    val customerRepository = CustomerRepository()
+    val profileState by authVM.profileState.collectAsState()
+
+    LaunchedEffect (profileState) {
+        if (profileState is ProfileState.Idle) {
+            authVM.profile(context = context, navController = navController)
+        }
+    }
     Surface(
         shape = RoundedCornerShape(bottomStart = 18.dp, bottomEnd = 18.dp),
         shadowElevation = 5.dp,
@@ -49,8 +60,10 @@ fun TopAppBarUI(navController: NavController) {
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.Start,
                 ) {
-                    Text("Hello, ${customerRepository.customers[0].name}", fontSize = 14.sp, modifier = Modifier.height(20.dp))
-                    Text("${customerRepository.customers[0].address}", fontSize = 8.sp, modifier = Modifier.height(20.dp))
+                    (profileState as? ProfileState.Success)?.let { data ->
+                        Text("Hello, ${data.data.name}", fontSize = 14.sp, modifier = Modifier.height(20.dp))
+                        Text(data.data.address, fontSize = 8.sp, modifier = Modifier.height(20.dp))
+                    }
                 }
             },
             navigationIcon = {
@@ -104,5 +117,7 @@ fun TopAppBarUI(navController: NavController) {
 @Composable
 private fun PreviewTopAppBar() {
     val navController = rememberNavController()
-    TopAppBarUI(navController = navController)
+    val authRepository = AuthRepository()
+    val authVM = AuthVM(authRepository, listOf(), navController)
+    TopAppBarUI(navController = navController, authVM = authVM)
 }

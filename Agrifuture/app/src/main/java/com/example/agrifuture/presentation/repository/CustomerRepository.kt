@@ -6,6 +6,7 @@ import android.util.Log
 import com.example.agrifuture.presentation.data.ApiClient
 import com.example.agrifuture.presentation.data.dto.login.LoginRequest
 import com.example.agrifuture.presentation.data.dto.login.LoginResponse
+import com.example.agrifuture.presentation.data.dto.logout.LogoutResponse
 import com.example.agrifuture.presentation.data.dto.profile.ProfileResponse
 import com.example.agrifuture.presentation.data.dto.register.RegisterRequest
 import com.example.agrifuture.presentation.data.dto.register.RegisterResponse
@@ -82,6 +83,23 @@ class AuthRepository {
                 val errorResponse = gson.fromJson(errorBody, ProfileResponse::class.java)
                 throw Exception(errorResponse.message)
             } catch (e: Exception) {
+                throw e
+            }
+        }
+    }
+
+    suspend fun logout(context: Context): LogoutResponse {
+        val authenticationUtils = AuthenticationUtils(context)
+        return withContext(Dispatchers.IO) {
+            try {
+                val token = authenticationUtils.getToken().toString()
+                authService.logout("Bearer $token")
+            }catch (e: HttpException) {
+                val errorBody = e.response()?.errorBody()?.string()
+                val errorResponse = gson.fromJson(errorBody, LogoutResponse::class.java)
+                throw Exception(errorResponse.message)
+            }
+            catch (e: Exception) {
                 throw e
             }
         }

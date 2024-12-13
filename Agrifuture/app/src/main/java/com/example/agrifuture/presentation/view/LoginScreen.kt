@@ -43,7 +43,6 @@ import com.example.agrifuture.presentation.component.authentication.ButtonUI
 import com.example.agrifuture.presentation.component.authentication.TextFieldUI
 import com.example.agrifuture.presentation.navigation.Screen
 import com.example.agrifuture.presentation.repository.AuthRepository
-import com.example.agrifuture.presentation.repository.CustomerRepository
 import com.example.agrifuture.presentation.state.LoginStates
 import com.example.agrifuture.presentation.viewModel.AuthVM
 import com.google.accompanist.swiperefresh.SwipeRefresh

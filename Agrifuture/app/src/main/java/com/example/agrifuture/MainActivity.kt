@@ -15,6 +15,9 @@ import androidx.navigation.navArgument
 import com.example.agrifuture.presentation.model.Customer
 import com.example.agrifuture.presentation.navigation.Screen
 import com.example.agrifuture.presentation.repository.AuthRepository
+import com.example.agrifuture.presentation.repository.PupukRepository
+import com.example.agrifuture.presentation.repository.RecommendationRepository
+import com.example.agrifuture.presentation.repository.SellerRepository
 import com.example.agrifuture.presentation.utils.AuthenticationUtils
 import com.example.agrifuture.presentation.utils.OnboardingUtils
 import com.example.agrifuture.presentation.view.CategoryDetailScreen
@@ -32,8 +35,11 @@ import com.example.agrifuture.presentation.view.RegisterScreen
 import com.example.agrifuture.presentation.view.ShopScreen
 import com.example.agrifuture.presentation.viewModel.AuthVM
 import com.example.agrifuture.presentation.viewModel.CartVM
+import com.example.agrifuture.presentation.viewModel.CategoryVM
 import com.example.agrifuture.presentation.viewModel.CheckoutVM
 import com.example.agrifuture.presentation.viewModel.OrderVM
+import com.example.agrifuture.presentation.viewModel.PupukVM
+import com.example.agrifuture.presentation.viewModel.RecommendationVM
 import com.example.agrifuture.ui.theme.AgrifutureTheme
 
 
@@ -97,7 +103,8 @@ class MainActivity : ComponentActivity() {
             }
 
             composable(Screen.Home.route){
-                HomeScreen(navController = navController)
+                val categoryVM = CategoryVM()
+                HomeScreen(navController = navController, categoryVM)
             }
 
             composable(Screen.Shop.route){
@@ -105,7 +112,9 @@ class MainActivity : ComponentActivity() {
             }
 
             composable(Screen.Recommendation.route){
-                RecommendationScreen(navController = navController)
+                val recommendationRepository = RecommendationRepository()
+                val recommendationVM = RecommendationVM(recommendationRepository)
+                RecommendationScreen(navController = navController, recommendationVM)
             }
 
             composable(Screen.Notification.route){
@@ -120,21 +129,26 @@ class MainActivity : ComponentActivity() {
 
             composable(
                 route = Screen.DetailProduct.route,
-                arguments = listOf(navArgument("productId") { type = NavType.IntType })
+                arguments = listOf(navArgument("id") { type = NavType.IntType })
             ) { backStackEntry ->
-                val productId = backStackEntry.arguments?.getInt("productId")
+                val productId = backStackEntry.arguments?.getInt("id")
+                val pupukRepository = PupukRepository()
+                val pupukVM = PupukVM(pupukRepository)
                 productId?.let {
-                    ProductDetailScreen(navController = navController, productId = it)
+                    ProductDetailScreen(navController = navController, id = it, pupukVM)
                 }
             }
 
             composable(
                 route = Screen.DetailCategory.route,
-                arguments = listOf(navArgument("categoryId") { type = NavType.IntType })
+                arguments = listOf(navArgument("id") { type = NavType.IntType })
             ) { backStackEntry ->
-                val categoryId = backStackEntry.arguments?.getInt("categoryId")
+                val categoryId = backStackEntry.arguments?.getInt("id")
+                val categoryVM = CategoryVM()
+                val pupukRepository = PupukRepository()
+                val pupukVM = PupukVM(pupukRepository)
                 categoryId?.let {
-                    CategoryDetailScreen(navController = navController, categoryId = it)
+                    CategoryDetailScreen(navController = navController, id = it, categoryVM = categoryVM, pupukVM)
                 }
             }
 

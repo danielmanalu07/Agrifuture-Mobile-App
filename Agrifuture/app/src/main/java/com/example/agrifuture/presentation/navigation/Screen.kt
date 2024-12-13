@@ -9,11 +9,11 @@ sealed class Screen(val route: String) {
     object Recommendation: Screen("recommendation")
     object Notification: Screen("notification")
     object Profile: Screen("profile")
-    object DetailProduct : Screen("product_detail/{productId}") {
-        fun createRoute(productId: Int) = "product_detail/$productId"
+    object DetailProduct : Screen("product_detail/{id}") {
+        fun createRoute(id: Int) = "product_detail/$id"
     }
-    object DetailCategory : Screen("category_detail/{categoryId}") {
-        fun createRoute(categoryId: Int) = "category_detail/$categoryId"
+    object DetailCategory : Screen("category_detail/{id}") {
+        fun createRoute(id: Int) = "category_detail/$id"
     }
     object MyCart: Screen("myCart")
     object Checkout: Screen("checkout")
