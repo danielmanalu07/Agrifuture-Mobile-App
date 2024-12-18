@@ -1,6 +1,7 @@
 package com.example.agrifuture.presentation.view
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,8 +17,16 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -29,9 +38,32 @@ import com.example.agrifuture.R
 import com.example.agrifuture.presentation.component.authentication.ButtonUI
 import com.example.agrifuture.presentation.component.order.OrderSection
 import com.example.agrifuture.presentation.viewModel.OrderVM
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 @Composable
 fun OrderScreen(orderVM: OrderVM, navController: NavController) {
+    val orderList by orderVM.orderList.collectAsState(initial = emptyList())
+    val context = LocalContext.current
+    val refreshScope = rememberCoroutineScope()
+    var refreshing by remember { mutableStateOf(false) }
+
+    // Function to trigger refresh
+    fun refresh() = refreshScope.launch {
+        refreshing = true
+        orderVM.apply {
+            myOrderPending(context)
+        }
+        delay(1000)
+        refreshing = false
+    }
+
+    LaunchedEffect(orderList) {
+        orderVM.myOrderPending(context)
+    }
+
     Scaffold(
         topBar = {
             TopAppBar(
@@ -56,11 +88,24 @@ fun OrderScreen(orderVM: OrderVM, navController: NavController) {
             )
         }
     ) { paddingValues ->
-        Column (
-            modifier = Modifier.fillMaxWidth().padding(paddingValues).padding(30.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+        SwipeRefresh(
+            state = rememberSwipeRefreshState(refreshing),
+            onRefresh = { refresh() }
         ) {
-            OrderSection(orderVM = orderVM, navController = navController)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                // Pass the orderList and other required state
+                OrderSection(
+                    orderList = orderList,
+                    navController = navController,
+                    onRefresh = { refresh() }
+                )
+            }
         }
     }
 }

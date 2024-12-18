@@ -13,16 +13,16 @@ import retrofit2.http.Header
 import retrofit2.http.POST
 
 interface AuthService {
-    @POST("register")
+    @POST("customer/register")
     suspend fun register(@Body request: RegisterRequest): RegisterResponse
 
-    @POST("login")
+    @POST("customer/login")
     suspend fun login(@Body request: LoginRequest) : LoginResponse
 
-    @GET("profile")
+    @GET("customer/profile")
     suspend fun profile(@Header ("Authorization") token: String): ProfileResponse
 
-    @POST("logout")
+    @GET("customer/logout")
     suspend fun logout(@Header ("Authorization") token: String) : LogoutResponse
 
 }

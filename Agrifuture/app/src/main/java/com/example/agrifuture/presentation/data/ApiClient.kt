@@ -1,7 +1,9 @@
 package com.example.agrifuture.presentation.data
 
 import com.example.agrifuture.presentation.service.AuthService
+import com.example.agrifuture.presentation.service.CartService
 import com.example.agrifuture.presentation.service.CategoryService
+import com.example.agrifuture.presentation.service.OrderService
 import com.example.agrifuture.presentation.service.PupukService
 import com.example.agrifuture.presentation.service.RecommendationService
 import okhttp3.OkHttpClient
@@ -11,8 +13,8 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object ApiClient {
-    const val BASE_URL_1 = "http://10.0.2.2:3000/api/"
-    const val BASE_URL_2 = "http://10.0.2.2:3001/api/"
+//    const val BASE_URL_1 = "http://10.0.2.2:3001/api/customer/"
+    const val BASE_URL_2 = "http://192.168.1.10:3000/api/"
     const val URL_RECOMMENDED = "https://prediksi-pupuk.1p3jnco58a14.us-south.codeengine.appdomain.cloud/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
@@ -36,7 +38,7 @@ object ApiClient {
     }
 
     val authService: AuthService by lazy {
-        createRetrofit(BASE_URL_1).create(AuthService::class.java)
+        createRetrofit(BASE_URL_2).create(AuthService::class.java)
     }
 
     val categoryService: CategoryService by lazy {
@@ -49,5 +51,11 @@ object ApiClient {
 
     val pupukService: PupukService by lazy {
         createRetrofit(BASE_URL_2).create(PupukService::class.java)
+    }
+    val cartService: CartService by lazy {
+        createRetrofit(BASE_URL_2).create(CartService::class.java)
+    }
+    val orderService: OrderService by lazy {
+        createRetrofit(BASE_URL_2).create(OrderService::class.java)
     }
 }

@@ -51,7 +51,9 @@ import androidx.navigation.compose.rememberNavController
 import coil.compose.AsyncImage
 import com.example.agrifuture.R
 import com.example.agrifuture.presentation.data.ApiClient
+import com.example.agrifuture.presentation.navigation.Screen
 import com.example.agrifuture.presentation.repository.PupukRepository
+import com.example.agrifuture.presentation.viewModel.CartVM
 import com.example.agrifuture.presentation.viewModel.ProductVM
 import com.example.agrifuture.presentation.viewModel.PupukVM
 
@@ -60,6 +62,7 @@ fun ProductDetailScreen(navController: NavController, id: Int, pupukVM: PupukVM)
     val context = LocalContext.current
     val pupukState = pupukVM.pupukList.collectAsState()
     val pupuk = pupukState.value.find { it.id == id }
+    val cartVM = CartVM()
 
     LaunchedEffect (Unit) {
         if (pupuk != null) {
@@ -146,7 +149,7 @@ fun ProductDetailScreen(navController: NavController, id: Int, pupukVM: PupukVM)
 
                                 Text(text="Rp. ${pupuk.price}/kg", fontSize = 18.sp, color = colorResource(id = R.color.black))
 
-                                Text(text = pupuk.sellers?.store_name ?: "Unknown Seller", fontSize = 14.sp, color = colorResource(id = R.color.gray))
+                                Text(text = pupuk.seller?.store_name ?: "Unknown Seller", fontSize = 14.sp, color = colorResource(id = R.color.gray))
                             }
                         }
 
@@ -168,7 +171,9 @@ fun ProductDetailScreen(navController: NavController, id: Int, pupukVM: PupukVM)
 
                         Button(
                             onClick = {
-                                Toast.makeText(context, "Product added to cart", Toast.LENGTH_SHORT).show()
+                                cartVM.addToCart(pupuk.id, context) {
+                                    navController.navigate(Screen.MyCart.route)
+                                }
                             },
                             modifier = Modifier.fillMaxWidth(),
                             colors = ButtonDefaults.buttonColors(

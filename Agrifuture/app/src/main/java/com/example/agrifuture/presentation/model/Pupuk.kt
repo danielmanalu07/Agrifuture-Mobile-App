@@ -11,5 +11,5 @@ data class Pupuk(
     val stock: Int,
     val created_at: String,
     val updated_at: String,
-    val sellers: Sellers?
+    val seller: Sellers?
 )

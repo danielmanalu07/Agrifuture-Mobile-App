@@ -51,7 +51,7 @@ fun ShopSection(
     Column(
         modifier = Modifier.padding(2.dp)
     ) {
-        GreenLabel(pupuk.firstOrNull()?.sellers?.store_name ?: "Unknown Seller")
+        GreenLabel(pupuk.firstOrNull()?.seller?.store_name ?: "Unknown Seller")
         Spacer(modifier = Modifier.height(12.dp))
         LazyRow(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             items(pupuk) { product ->
@@ -163,7 +163,7 @@ fun ProductCard(
                 Spacer(modifier = Modifier.height(2.dp))
 
                 Text(
-                    text = pupuk.sellers?.store_name ?: "Unknown Seller",
+                    text = pupuk.seller?.store_name ?: "Unknown Seller",
                     fontSize = 12.sp,
                     color = Color.Gray
                 )

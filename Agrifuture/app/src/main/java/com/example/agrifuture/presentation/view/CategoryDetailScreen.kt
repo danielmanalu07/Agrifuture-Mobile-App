@@ -254,7 +254,7 @@ fun ProductCard(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = pupuk.sellers?.store_name ?: "Unknown Seller",
+                    text = pupuk.seller?.store_name ?: "Unknown Seller",
                     fontSize = 10.sp,
                     color = Color.Gray,
                     maxLines = 1,

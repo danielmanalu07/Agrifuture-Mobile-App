@@ -50,7 +50,7 @@ fun ShopScreen(navController: NavController) {
         pupukVM.fetchPupuk()
     }
 
-    val uniqueShops = remember(pupuks) { pupuks.mapNotNull { it.sellers?.store_name }.distinct() }
+    val uniqueShops = remember(pupuks) { pupuks.mapNotNull { it.seller?.store_name }.distinct() }
 
     var searchQuery by remember { mutableStateOf("") }
     var showSearchField by remember { mutableStateOf(false) }
@@ -125,7 +125,7 @@ fun ShopScreen(navController: NavController) {
                 verticalArrangement = Arrangement.spacedBy(24.dp)
             ) {
                 items(uniqueShops) { shopName ->
-                    val shopProducts = filteredProducts.filter { it.sellers?.store_name == shopName }
+                    val shopProducts = filteredProducts.filter { it.seller?.store_name == shopName }
                     if (shopProducts.isNotEmpty()) {
                         ShopSection(
                             pupuk = shopProducts,

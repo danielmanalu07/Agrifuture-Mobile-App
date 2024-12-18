@@ -158,8 +158,9 @@ class MainActivity : ComponentActivity() {
             }
 
             composable(Screen.Checkout.route){
-                val checkoutVM = CheckoutVM()
-                CheckoutScreen(checkoutVM = checkoutVM, navController = navController)
+//                val checkoutVM = CheckoutVM()
+                val orderVM = OrderVM()
+                CheckoutScreen(orderVM = orderVM, navController = navController)
             }
             composable(Screen.Order.route) {
                 val orderVM = OrderVM()

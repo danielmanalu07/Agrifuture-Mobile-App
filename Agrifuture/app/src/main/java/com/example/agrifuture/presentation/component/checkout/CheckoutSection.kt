@@ -2,7 +2,6 @@ package com.example.agrifuture.presentation.component.checkout
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -13,20 +12,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
@@ -35,28 +31,37 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import androidx.navigation.compose.rememberNavController
+import coil.compose.AsyncImage
 import com.example.agrifuture.R
-import com.example.agrifuture.presentation.model.Checkout
+import com.example.agrifuture.presentation.data.ApiClient
+import com.example.agrifuture.presentation.model.Order_Items
+import com.example.agrifuture.presentation.state.MyOrderState
 import com.example.agrifuture.presentation.viewModel.CheckoutVM
+import com.example.agrifuture.presentation.viewModel.OrderVM
 
 @Composable
-fun CheckoutSection(checkoutVM: CheckoutVM, navController: NavController) {
-    val checkouts = checkoutVM.getCheckouts()
+fun CheckoutSection(orderVM: OrderVM, navController: NavController) {
+    val myOrderState by orderVM.myorder.collectAsState()
 
-    Column (
-        modifier = Modifier
-            .padding(8.dp)
-            .fillMaxWidth()
-    ) {
-        checkouts.forEach{ checkout ->
-            CheckoutItem(checkout = checkout)
+    when (val state = myOrderState) {
+        is MyOrderState.Success -> {
+            state.items.forEach { item ->
+                CheckoutItem(orderItems = item)
+            }
         }
-
+        is MyOrderState.Loading -> {
+            CircularProgressIndicator()
+        }
+        is MyOrderState.Error -> {
+            Text(text = state.messsage, color = Color.Red)
+        }
+        else -> Unit
     }
 }
 
+
 @Composable
-fun CheckoutItem(checkout: Checkout) {
+fun CheckoutItem(orderItems: Order_Items) {
     Box(
         modifier = Modifier
             .padding(16.dp)
@@ -76,9 +81,9 @@ fun CheckoutItem(checkout: Checkout) {
                 ),
                 shape = RoundedCornerShape(8.dp)
             )  {
-                Image(
-                    painter = painterResource(id = checkout.cart.product.image),
-                    contentDescription = null,
+                AsyncImage(
+                    model = ApiClient.BASE_URL_2 + "pupuk" + orderItems.fertilizer?.image_path,
+                    contentDescription = orderItems.fertilizer?.name,
                     modifier = Modifier.fillMaxSize(),
                     contentScale = ContentScale.Fit
                 )
@@ -96,7 +101,7 @@ fun CheckoutItem(checkout: Checkout) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        text = checkout.cart.product.name,
+                        text = orderItems.fertilizer?.name ?: "Unknown Name",
                         fontSize = 16.sp,
                         color = colorResource(id = R.color.black)
                     )
@@ -112,7 +117,7 @@ fun CheckoutItem(checkout: Checkout) {
                     Spacer(modifier = Modifier.weight(1f))
 
                     Text(
-                        text = "${checkout.cart.product.stock} Kg",
+                        text = "${orderItems.fertilizer?.stock} Kg",
                         fontSize = 16.sp,
                         color = colorResource(id = R.color.black)
                     )
@@ -127,7 +132,7 @@ fun CheckoutItem(checkout: Checkout) {
                         .padding(4.dp)
                 ) {
                     Text(
-                        text = "Rp. ${checkout.cart.product.price.toInt()}",
+                        text = "Rp. ${orderItems.fertilizer?.price}",
                         fontSize = 14.sp,
                         color = colorResource(id = R.color.black)
                     )
@@ -135,7 +140,7 @@ fun CheckoutItem(checkout: Checkout) {
                     Spacer(modifier = Modifier.weight(1f))
 
                     Text(
-                        text = "x${checkout.cart.quantity}",
+                        text = "x${orderItems.quantity}",
                         fontSize = 14.sp,
                         color = colorResource(id = R.color.black),
                         modifier = Modifier.offset(x = 25.dp)
@@ -151,7 +156,7 @@ fun CheckoutItem(checkout: Checkout) {
 @Composable
 private fun PreviewCheckoutSection() {
     val navController = rememberNavController()
-    val checkoutVM = CheckoutVM()
-
-    CheckoutSection(checkoutVM = checkoutVM, navController = navController)
+//    val checkoutVM = CheckoutVM()
+    val orderVM = OrderVM()
+    CheckoutSection(orderVM = orderVM, navController = navController)
 }

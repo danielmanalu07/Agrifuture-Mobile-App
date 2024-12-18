@@ -43,7 +43,9 @@ import com.example.agrifuture.presentation.data.ApiClient
 import com.example.agrifuture.presentation.model.Product
 import com.example.agrifuture.presentation.model.Pupuk
 import com.example.agrifuture.presentation.navigation.Screen
+import com.example.agrifuture.presentation.repository.CartRepository
 import com.example.agrifuture.presentation.repository.PupukRepository
+import com.example.agrifuture.presentation.viewModel.CartVM
 import com.example.agrifuture.presentation.viewModel.ProductVM
 import com.example.agrifuture.presentation.viewModel.PupukVM
 
@@ -51,6 +53,9 @@ import com.example.agrifuture.presentation.viewModel.PupukVM
 fun ProductSection(navController: NavController, pupukVM: PupukVM) {
     val configuration = LocalConfiguration.current
     val screenWidth = configuration.screenWidthDp
+    val context = LocalContext.current
+
+    val cartVM = CartVM()
 
     val pupuks by pupukVM.pupukList.collectAsState()
 
@@ -85,6 +90,7 @@ fun ProductSection(navController: NavController, pupukVM: PupukVM) {
                                 popUpTo(Screen.DetailProduct.route) { inclusive = true }
                             }
                         },
+                        cartVM = cartVM,
                         navController = navController
                     )
                 }
@@ -102,18 +108,18 @@ fun ProductCard(
     modifier: Modifier = Modifier,
     pupuk: Pupuk,
     onClick: () -> Unit,
+    cartVM: CartVM,
     navController: NavController
 ) {
+    val context = LocalContext.current
+
     Card(
-        modifier = modifier
-            .clickable { onClick() },
+        modifier = modifier.clickable { onClick() },
         elevation = CardDefaults.cardElevation(8.dp),
         colors = CardDefaults.cardColors(containerColor = Color.White),
         shape = RoundedCornerShape(8.dp)
     ) {
-        Column(
-            modifier = Modifier.padding(8.dp)
-        ) {
+        Column(modifier = Modifier.padding(8.dp)) {
             AsyncImage(
                 model = ApiClient.BASE_URL_2 + "pupuk" + pupuk.image_path,
                 contentDescription = pupuk.name,
@@ -139,7 +145,7 @@ fun ProductCard(
                 color = Color.Gray
             )
 
-            Row(
+            Row (
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -147,24 +153,25 @@ fun ProductCard(
                 Text(
                     text = "Rp. ${pupuk.price}",
                     fontSize = 12.sp,
-                    fontWeight = FontWeight.Normal,
                     color = Color.Black
                 )
 
-                Spacer(modifier = Modifier.height(2.dp))
-
                 Text(
-                    text = pupuk.sellers?.store_name ?: "Unknown Seller",
-                    fontSize = 12.sp,
-                    color = Color.Gray
+                    text = pupuk.seller?.store_name ?: "Unknown Seller",
+                    fontSize = 10.sp,
+                    color = Color.Black,
+                    fontWeight = FontWeight.Bold
                 )
             }
-
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Button(
-                onClick = { },
+                onClick = {
+                    cartVM.addToCart(pupuk.id, context) {
+                        navController.navigate(Screen.MyCart.route)
+                    }
+                },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF8BC34A))
             ) {
@@ -177,6 +184,7 @@ fun ProductCard(
         }
     }
 }
+
 
 
 @Preview(showBackground = true)
